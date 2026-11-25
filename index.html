@@ -150,7 +150,7 @@ document.body.appendChild(s);s.addEventListener('click',e=>{const b=e.target.clo
 f.hidden=!on;if(!on)cSet(false)}
 /* ---------- bloqueo por salir de la página */
 function lock(why){if(!S.started||S.submitted||S.sub||S.locked)return;S.locked=true;LS.s('ev3l',1);showLock();ev('bloqueo',{why})}
-function showLock(){const d=$('#lk');if(!d)return;d.hidden=false;d.innerHTML=`<div class="lkc">${I('lock',48)}<h2 style="justify-content:center">Evaluación bloqueada</h2><p>Saliste de la página de la evaluación. Avisa al docente para continuar. El tiempo sigue corriendo.</p><p class="mut pulse">Esperando al docente…</p></div>`;document.body.classList.add('locked');poll()}
+function showLock(){const d=$('#lk');if(!d)return;d.hidden=false;d.innerHTML=`<div class="lkc">${I('lock',48)}<h2 style="justify-content:center">Evaluación bloqueada</h2><p>Saliste de la página de la evaluación o la recargaste. Avisa al docente para continuar. Tus respuestas están guardadas.</p><p class="mut pulse">Esperando al docente…</p></div>`;document.body.classList.add('locked');poll()}
 async function poll(){clearTimeout(S.pt);if(!S.locked||S.submitted)return;try{const e=await rpc('ev3_estado',{p_ci:S.ci,p_pin:S.pin});if(!e.locked&&!Q.some(x=>x.kind=='bloqueo')){S.locked=false;LS.s('ev3l',0);$('#lk').hidden=true;document.body.classList.remove('locked');return}}catch{}S.pt=setTimeout(poll,4000)}
 document.addEventListener('visibilitychange',()=>{if(document.hidden)lock('pestaña')});addEventListener('pagehide',()=>lock('pagehide'));
 addEventListener('blur',()=>setTimeout(()=>{if(S.started&&!document.hasFocus()&&!document.hidden)lock('ventana')},1500));
