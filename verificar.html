@@ -1,0 +1,64 @@
+<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Verificar notas · Evaluación 3 - 2do Corte (10%)</title>
+<style>
+:root{color-scheme:light;--bg:#f4f5ee;--fg:#14170f;--mut:#555c4a;--card:#fff;--ln:#d9ddcc;--ac:#c6f135;--ok:#15803d;--bad:#dc2626}
+@media (prefers-color-scheme:dark){:root{color-scheme:dark;--bg:#0d100a;--fg:#eef1e4;--mut:#a5ad97;--card:#171b12;--ln:#2a3021;--ok:#4ade80;--bad:#f87171}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:20px 16px 60px}
+main{max-width:760px;margin:0 auto}h1{font-size:26px;margin:6px 0 4px}h2{font-size:18px;margin:0 0 8px}.mut{color:var(--mut)}
+.card{background:var(--card);border:1px solid var(--ln);border-radius:20px;padding:18px;margin:14px 0}
+input[type=file],input[type=text]{width:100%;padding:12px;border:2px solid var(--ln);border-radius:12px;background:var(--bg);color:var(--fg);font:inherit}
+input[type=text]{font-family:ui-monospace,Consolas,monospace;font-size:13px}
+button{margin-top:10px;min-height:48px;padding:0 20px;border:2px solid var(--fg);border-radius:14px;background:var(--ac);color:#14170f;font:700 16px inherit;font-family:inherit;cursor:pointer}button:disabled{opacity:.5}
+.res{border-radius:16px;padding:16px;margin-top:14px;font-weight:600}.res.ok{background:color-mix(in srgb,var(--ok) 16%,transparent);border:2px solid var(--ok)}.res.no{background:color-mix(in srgb,var(--bad) 14%,transparent);border:2px solid var(--bad)}.res.info{border:2px solid var(--ln)}
+.res b.t{display:block;font-size:20px;margin-bottom:4px}code{display:block;word-break:break-all;font:12px ui-monospace,Consolas,monospace;margin-top:6px;background:var(--bg);padding:8px;border-radius:10px;font-weight:400}
+ul{margin:8px 0 0;padding-left:20px;font-weight:400}li{margin:3px 0}
+</style></head><body><main>
+<h1>Verificar notas</h1><p class="mut">Evaluación 3 - 2do Corte (10%) · Gerencia de Cómputo · IUP Santiago Mariño, ext. Cabimas</p>
+<div class="card"><h2>1. Verificar el archivo Excel</h2><p class="mut">Sube el archivo .xlsx que descargó el docente. La página recalcula la huella con los datos de la hoja «Notas» y la compara con la registrada por el docente al sellar los resultados. El archivo no se envía a ningún servidor: se lee en tu dispositivo.</p>
+<input id="f" type="file" accept=".xlsx"><button id="b1">Verificar archivo</button><div id="r1"></div></div>
+<div class="card"><h2>2. Solo comprobar un sello</h2><p class="mut">Pega la huella (64 caracteres) para ver si fue registrada y cuándo. Esto no comprueba que un archivo esté intacto: para eso usa la opción 1.</p>
+<input id="h" type="text" placeholder="Huella SHA-256" autocomplete="off" spellcheck="false"><button id="b2">Comprobar sello</button><div id="r2"></div></div>
+</main>
+<script>
+const CFG={url:'https://fcrrtpujuncxruwxpckq.supabase.co',key:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZjcnJ0cHVqdW5jeHJ1d3hwY2txIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA4OTc4NzYsImV4cCI6MjA5NjQ3Mzg3Nn0.rRv6UGACaVpMBXv6Ax9Pv_hDUD06i198_lhCq5PXW5k'};
+async function rpc(fn,args){const r=await fetch(`${CFG.url}/rest/v1/rpc/${fn}`,{method:'POST',headers:{'Content-Type':'application/json',apikey:CFG.key,Authorization:'Bearer '+CFG.key},body:JSON.stringify(args)});const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error((j&&j.message)||'error');return j}
+const Z2=v=>v==null||v===''||isNaN(Number(v))?'':Number(v).toFixed(2),ZI=d=>d?new Date(Math.floor(d.getTime()/1000)*1000).toISOString().slice(0,19):'';
+const zcanon=r=>[r.ci,String(r.nombre).trim().normalize('NFC'),r.estado,Z2(r.nota),Z2(r.vf),Z2(r.mc),Z2(r.rack),Z2(r.tel),Z2(r.niv),String(r.bloq|0),String(r.peg|0),r.entrega?ZI(r.entrega):'',r.codigo||''].join('|');
+async function zsha(t){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(t));return[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}
+async function zsello(rows,iso){const rs=rows.slice().sort((a,b)=>a.ci<b.ci?-1:a.ci>b.ci?1:0),hs=[];for(const r of rs)hs.push(await zsha(zcanon(r)));return{hash:await zsha('EVAL3|v1|'+rs.length+'|'+iso+'\n'+hs.join('\n')),filas:hs,rows:rs}}
+
+const $=s=>document.querySelector(s),esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]);
+const XU=['https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js','https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js'];
+function loadX(){return window.ExcelJS?Promise.resolve():new Promise((ok,no)=>{let i=0;const t=()=>{if(i>=XU.length)return no(new Error('xlsx'));const s=document.createElement('script');s.src=XU[i++];s.onload=()=>window.ExcelJS?ok():t();s.onerror=()=>{s.remove();t()};document.head.appendChild(s)};t()})}
+const fl=t=>new Date(t).toLocaleString('es-VE',{timeZone:'America/Caracas'})+' (hora Venezuela)';
+const val=v=>{if(v==null)return null;if(typeof v=='object'&&!(v instanceof Date)){if('result' in v)return val(v.result);if('text' in v)return v.text;if('richText' in v)return v.richText.map(x=>x.text).join('')}return v};
+const txt=v=>{v=val(v);return v==null?'':String(v).trim()};
+function fecha(v){v=val(v);if(v==null||v==='')return null;if(v instanceof Date)return new Date(Math.round(v.getTime()/1000)*1000);if(typeof v=='number')return new Date(Math.round((v-25569)*86400)*1000);return null}
+async function leer(file){await loadX();const wb=new ExcelJS.Workbook();await wb.xlsx.load(await file.arrayBuffer());
+const ws=wb.getWorksheet('Notas'),wv=wb.getWorksheet('Verificación');if(!ws||!wv)throw new Error('El archivo no tiene las hojas «Notas» y «Verificación».');
+let claimed='',iso='';wv.eachRow(r=>{const a=txt(r.getCell(1).value);if(a=='Sello (huella SHA-256)')claimed=txt(r.getCell(2).value);if(a=='Sellado el (UTC)')iso=txt(r.getCell(2).value)});
+let hr=0;const col={};ws.eachRow((r,n)=>{if(hr)return;if(txt(r.getCell(2).value)=='Cédula'){hr=n;r.eachCell((c,i)=>{col[txt(c.value)]=i})}});
+const need=['Cédula','Estudiante','Estado','Nota (/20)','V/F (/3)','Selección múltiple (/5)','Rack y U (/4)','Telecomunicaciones (/3)','Nivel TIA-942 (/5)','Bloqueos','Pegar / copiar','Entrega (UTC)','Código'];
+for(const k of need)if(!col[k])throw new Error('Falta la columna «'+k+'» en la hoja Notas.');
+const rows=[];for(let n=hr+1;n<=ws.rowCount;n++){const r=ws.getRow(n),ci=txt(r.getCell(col['Cédula']).value);if(!ci)break;const g=k=>val(r.getCell(col[k]).value);
+rows.push({n:txt(r.getCell(1).value),ci,nombre:txt(g('Estudiante')),estado:txt(g('Estado')),nota:g('Nota (/20)'),vf:g('V/F (/3)'),mc:g('Selección múltiple (/5)'),rack:g('Rack y U (/4)'),tel:g('Telecomunicaciones (/3)'),niv:g('Nivel TIA-942 (/5)'),bloq:g('Bloqueos'),peg:g('Pegar / copiar'),entrega:fecha(r.getCell(col['Entrega (UTC)']).value),codigo:txt(g('Código'))})}
+return{claimed:claimed.toLowerCase(),iso,rows}}
+function box(el,cls,t,body){$(el).innerHTML=`<div class="res ${cls}"><b class="t">${t}</b>${body||''}</div>`}
+$('#b1').onclick=async()=>{const f=$('#f').files[0];if(!f)return box('#r1','info','Elige un archivo .xlsx primero.');const b=$('#b1');b.disabled=true;$('#r1').innerHTML='';
+try{const d=await leer(f);
+if(!/^[0-9a-f]{64}$/.test(d.claimed))return box('#r1','no','Archivo sin sello','<div style="font-weight:400">Este archivo no trae un sello válido (se generó con la evaluación abierta o fue alterado), así que no se puede verificar.</div>');
+if(!d.rows.length)return box('#r1','no','El archivo no tiene filas de estudiantes');
+const calc=await zsello(d.rows,d.iso),srv=await rpc('ev3_verificar',{p_hash:d.claimed});
+if(!srv.encontrado)return box('#r1','no','NO VÁLIDO: el sello no está registrado',`<div style="font-weight:400">La huella que trae el archivo no existe en el registro del docente. El archivo fue alterado o no proviene de este sistema.</div><code>${esc(d.claimed)}</code>`);
+const fechaOk=srv.sellado===d.iso,mismo=calc.hash===d.claimed;
+if(mismo&&fechaOk&&srv.n===d.rows.length)return box('#r1','ok','VÁLIDO: el archivo está íntegro',`<div style="font-weight:400">Los ${d.rows.length} registros coinciden exactamente con los datos sellados el ${esc(fl(srv.sellado))}, cuando el docente selló los resultados. Nada se modificó desde entonces.</div><code>${esc(d.claimed)}</code>`);
+const orden=calc.rows,dif=[];orden.forEach((r,i)=>{if(calc.filas[i]!==srv.filas[i])dif.push(r)});
+let li='';if(srv.n!==d.rows.length)li+=`<li>El archivo tiene ${d.rows.length} registros y el sello incluye ${srv.n}.</li>`;
+if(!fechaOk)li+='<li>La fecha del sello escrita en el archivo no coincide con la registrada.</li>';
+if(dif.length&&srv.n===d.rows.length)li+=dif.map(r=>`<li>Fila N.° ${esc(r.n)}: ${esc(r.nombre)} (cédula ${esc(r.ci)}) fue modificada.</li>`).join('');
+box('#r1','no','NO VÁLIDO: el archivo fue modificado',`<div style="font-weight:400">El sello fue registrado el ${esc(fl(srv.sellado))}, pero los datos del archivo ya no coinciden con él.</div><ul>${li||'<li>Los datos no coinciden con el sello.</li>'}</ul>`)
+}catch(e){box('#r1','no','No se pudo verificar',`<div style="font-weight:400">${esc(e.message||e)}</div>`)}finally{b.disabled=false}};
+$('#b2').onclick=async()=>{const h=$('#h').value.trim().toLowerCase(),b=$('#b2');b.disabled=true;$('#r2').innerHTML='';
+try{if(!/^[0-9a-f]{64}$/.test(h))return box('#r2','info','La huella debe tener 64 caracteres (0-9 y a-f).');const s=await rpc('ev3_verificar',{p_hash:h});
+if(s.encontrado)box('#r2','ok','Sello registrado',`<div style="font-weight:400">Registrado el ${esc(fl(s.sellado))} con ${s.n} registros.</div>`);else box('#r2','no','Sello no registrado','<div style="font-weight:400">Esta huella no existe en el registro del docente.</div>')}
+catch(e){box('#r2','no','No se pudo comprobar',`<div style="font-weight:400">${esc(e.message||e)}</div>`)}finally{b.disabled=false}};
+</script></body></html>
